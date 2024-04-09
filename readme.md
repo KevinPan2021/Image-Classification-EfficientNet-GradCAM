@@ -1,5 +1,3 @@
-GUI sports image classification using pytorch from scratch
-
 Introduction:
 	This project aims to preform 100 class sports image classification using transfer learning from pretrained Resnet, EfficientNet ... This project includes: image data processing, training deep learning models for classification, GradCAM for visualization, and a GUI for your own data.
 
