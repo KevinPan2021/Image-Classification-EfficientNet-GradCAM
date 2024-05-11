@@ -1,27 +1,17 @@
 import os
-import numpy as np
 from PIL import Image
 import torch
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
 import pandas as pd
 import pickle
-import platform
-
+from collections import Counter
 
 # system packages
-from model import ResNet18, ResNet50, EfficientNet_b0, EfficientNet_b3
+from efficientnet import EfficientNet_b0
 from training import model_training, feedforward
-from visualization import plot_confusion_matrix, plot_data_distribution
-
-# supports MacOS and Windows
-def GPU_Device():
-    system = platform.system()
-    if system == "Darwin":
-        return 'mps'
-    elif system == "Windows":
-        return 'GPU'
-
+from visualization import plot_confusion_matrix, plot_data_distribution, plot_image
+        
 
 # bidirectional dictionary
 class BidirectionalMap:
@@ -53,81 +43,85 @@ class SaveFeatures():
     def remove(self): 
         self.hook.remove()
     
+
+# custom dataset class, read images from folder
+class CustomDataset(Dataset):
+    def __init__(self, root_dir, class_ind_pair, transform=None):
+        self.root_dir = root_dir
+        self.class_ind_pair = class_ind_pair
+        self.transform = transform
+        self.classes = sorted(os.listdir(root_dir))
+        
+        self.image_paths = []
+        for folder in os.listdir(self.root_dir):
+            folder_path = os.path.join(self.root_dir, folder)
+            label = self.class_ind_pair.get_key(folder)
+            for file in os.listdir(folder_path):
+                img_path = os.path.join(folder_path, file)
+                self.image_paths.append((img_path, label))
+                
+                
+    def __len__(self):
+        return len(self.image_paths)
+
     
-# reading imgs and label to a dictionary
-def read_imgs(path, transform):
-    X, Y = [], []
-    for folder in os.listdir(path):
-        if folder.endswith('DS_Store'):
-            continue
-        folder_path = os.path.join(path, folder)
-        for imgs in os.listdir(folder_path):
-            if not imgs.endswith('.jpg'):
-                continue
-            img = Image.open(os.path.join(folder_path, imgs)).convert('RGB')
-            X.append(transform(img))
-            Y.append(folder)
-    return X, Y
-
-
-# read a single image from path
-def read_img(path, transform):
-    img = Image.open(path) 
-    X = [transform(img)]
-    Y = [path.split('/')[-2]]
-    return X, Y
+    def __getitem__(self, idx):
+        img_path, label = self.image_paths[idx]
+        img = Image.open(img_path).convert('RGB')
+        if self.transform:
+            img = self.transform(img)
+        return img, label
+    
+    
+    def get_label_distribution(self):
+        counter = Counter()
+        for path in self.image_paths:
+            counter.update({path[-1]: 1})
+        return counter
     
 
 
-# convert list of tensor to torch matrix
-def convert_to_tensor(X, Y, class_ind_pair):
-    X = torch.stack(X)
-    Y = torch.stack([torch.tensor(class_ind_pair.get_key(y)) for y in Y])
-    return X, Y
+
+# supports CUDA, MPS, and CPU
+def compute_device():
+    if torch.cuda.is_available():
+        return 'cuda'
+    elif torch.backends.mps.is_available():
+        return 'mps'
+    else:
+        return 'cpu'
 
 
-# preform horizontal flipping to expand the data size and data balancing
-def data_augmentation(X, Y, counts):
-    # determine the targeted data size after augmenting for each class
-    count_arr = np.array(list(counts.values()))
-    targeted_counts = int(np.percentile(count_arr, 5)*2) # double the 5th percentile
+
+# return the image transformation (with/without) data augmentation
+def get_transform(aug=False):
+    # image transform with augmentation
+    if aug:
+        transform = transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.RandomHorizontalFlip(p=0.5),
+            transforms.ColorJitter(),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        ])
     
-    # precalculate the total number of augmnentations (faster than torch.cat)
-    total_aug = 0
-    for key, value in counts.items():
-        total_aug += min(max(0, targeted_counts - value), value)
-        
-    total_X = torch.empty(total_aug+X.shape[0], X.shape[1], X.shape[2], X.shape[3])
-    total_Y = torch.empty(total_aug+Y.shape[0])
-    
-    num_aug = 0
-    for key, value in counts.items():
-        count = min(max(0, targeted_counts - value), value)
-        
-        if count <= 0:
-            continue
-        
-        ind = np.random.choice(np.argwhere(Y==key)[0], size=count, replace=False)
-               
-        # horizontial flipping X
-        sampled_X = torch.flip(X[ind, :, :, :], dims=(3,))
-        sampled_Y = torch.zeros(len(ind)) + key
-        
-        # concatenate to original X and Y
-        total_X[num_aug: num_aug+len(ind), :, :, :] = sampled_X
-        total_Y[num_aug: num_aug+len(ind)] = sampled_Y
-        
-        num_aug += len(ind)
-    
-    total_X[num_aug:, :, :, :] = X
-    total_Y[num_aug:] = Y
-        
-    return total_X, total_Y
+    # image transform without augmentation
+    else:
+        transform = transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        ])
+    return transform
+
 
 
 def main():    
+    # dataset
+    dataset = '../Datasets/100 Sports Image Classification'
+    
     # read labels from csv and create class to label pairs
-    df = pd.read_csv('data/sports.csv')
+    df = pd.read_csv(f'{dataset}/sports.csv')
     labels = df['labels']
     classes = sorted(list(set(labels)))
     nclasses = len(classes)
@@ -140,67 +134,49 @@ def main():
         
         
     # loading model
-    #model = ResNet18(nclasses)
-    model = ResNet50(nclasses)
-    #model = EfficientNet_b0(nclasses)
-    #model = EfficientNet_b3(nclasses)
-    model = model.to(GPU_Device())
-    
-    # image transform
-    if type(model).__name__ == 'EfficientNet_b3':
-        transform = transforms.Compose([
-            transforms.Resize((300, 300)),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-        ])
-    else:
-        transform = transforms.Compose([
-            transforms.Resize((224, 224)),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-        ])
-    
-    
+    model = EfficientNet_b0(nclasses)
+    model = model.to(compute_device())
+
     # reading train data
-    trainX, trainY = read_imgs('data/train', transform)
-    
+    train_dataset = CustomDataset(f'{dataset}/train', class_ind_pair, get_transform(aug=True))
+
     # reading validation data
-    validX, validY = read_imgs('data/valid', transform) 
-    
-    # convert to tensor
-    trainX, trainY = convert_to_tensor(trainX, trainY, class_ind_pair)
-    print('train', trainX.shape, trainY.shape)
-    validX, validY = convert_to_tensor(validX, validY, class_ind_pair)
-    print('valid', validX.shape, validY.shape)
-    
-    
+    valid_dataset = CustomDataset(f'{dataset}/valid', class_ind_pair, get_transform()) 
+
+    # visualize some data
+    for i in range(0, len(train_dataset), len(train_dataset)//6):
+        x, y = train_dataset[i]
+        plot_image(i, x, class_ind_pair.get_value(y)) 
+
     # plot the data distribution
-    counts = plot_data_distribution(trainY, class_ind_pair)
-    
-    # data augmentation
-    np.random.seed(42)
-    trainX, trainY = data_augmentation(trainX, trainY, counts)
-    
-    # replot data distribution
-    plot_data_distribution(trainY, class_ind_pair)
-    
+    plot_data_distribution(train_dataset.get_label_distribution(), class_ind_pair)
+
     # convert to loader object
-    train_loader = DataLoader(TensorDataset(trainX, trainY), batch_size=32, shuffle=True)
-    valid_loader = DataLoader(TensorDataset(validX, validY), batch_size=32, shuffle=True)
+    train_loader = DataLoader(
+        train_dataset, batch_size=128, num_workers=4, pin_memory=True, 
+        persistent_workers=True, shuffle=True
+    )
+    valid_loader = DataLoader(
+        valid_dataset, batch_size=256, num_workers=4, pin_memory=True, 
+        persistent_workers=True, shuffle=False
+    )
     
     # model training
-    model_training(model, nclasses, train_loader, valid_loader, GPU_Device())
+    model_training(model, nclasses, train_loader, valid_loader)
     
     # loading the best preforming model
     model.load_state_dict(torch.load(f'{type(model).__name__}.pth'))
     
     # model test preformance
-    testX, testY = read_imgs('data/test', transform) 
-    testX, testY = convert_to_tensor(testX, testY, class_ind_pair)
-    test_loader = DataLoader(TensorDataset(testX, testY), batch_size=32)
-    confusion_mat, test_accuracy, test_loss = feedforward(model, test_loader)
-    print('finished inference')
-    print('test acc', test_accuracy)
+    test_dataset = CustomDataset(f'{dataset}/test', class_ind_pair, get_transform())
+    
+    test_loader = DataLoader(
+        test_dataset, batch_size=256, num_workers=4, pin_memory=True, 
+        persistent_workers=True, shuffle=False
+    )
+    
+    print('Test Preformance')
+    confusion_mat, test_accuracy, test_loss = feedforward(model, test_loader, confusion=True)
     
     plot_confusion_matrix(confusion_mat, class_ind_pair)
 

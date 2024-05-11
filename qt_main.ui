@@ -6,20 +6,20 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>950</width>
-    <height>650</height>
+    <width>1200</width>
+    <height>800</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
-    <width>950</width>
-    <height>650</height>
+    <width>1200</width>
+    <height>800</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
-    <width>950</width>
-    <height>650</height>
+    <width>1200</width>
+    <height>800</height>
    </size>
   </property>
   <property name="mouseTracking">
@@ -37,14 +37,14 @@
   <widget class="QWidget" name="centralwidget">
    <property name="minimumSize">
     <size>
-     <width>950</width>
-     <height>650</height>
+     <width>1200</width>
+     <height>800</height>
     </size>
    </property>
    <property name="maximumSize">
     <size>
-     <width>950</width>
-     <height>650</height>
+     <width>1200</width>
+     <height>800</height>
     </size>
    </property>
    <property name="mouseTracking">
@@ -74,7 +74,7 @@
           </property>
           <property name="font">
            <font>
-            <pointsize>14</pointsize>
+            <pointsize>10</pointsize>
            </font>
           </property>
           <property name="styleSheet">
@@ -129,8 +129,11 @@ QLineEdit:disabled {
            <widget class="QLabel" name="label_3">
             <property name="font">
              <font>
-              <pointsize>16</pointsize>
+              <pointsize>14</pointsize>
              </font>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color:white;</string>
             </property>
             <property name="text">
              <string>Image</string>
@@ -144,18 +147,18 @@ QLineEdit:disabled {
            <widget class="QLabel" name="label_image">
             <property name="minimumSize">
              <size>
-              <width>450</width>
-              <height>450</height>
+              <width>580</width>
+              <height>580</height>
              </size>
             </property>
             <property name="maximumSize">
              <size>
-              <width>450</width>
-              <height>450</height>
+              <width>580</width>
+              <height>580</height>
              </size>
             </property>
             <property name="autoFillBackground">
-             <bool>true</bool>
+             <bool>false</bool>
             </property>
             <property name="styleSheet">
              <string notr="true">background-color: rgb(56, 64, 85);</string>
@@ -176,8 +179,11 @@ QLineEdit:disabled {
            <widget class="QLabel" name="label_4">
             <property name="font">
              <font>
-              <pointsize>16</pointsize>
+              <pointsize>14</pointsize>
              </font>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color:white;</string>
             </property>
             <property name="text">
              <string>Heatmap</string>
@@ -191,18 +197,18 @@ QLineEdit:disabled {
            <widget class="QLabel" name="label_heatmap">
             <property name="minimumSize">
              <size>
-              <width>450</width>
-              <height>450</height>
+              <width>580</width>
+              <height>580</height>
              </size>
             </property>
             <property name="maximumSize">
              <size>
-              <width>450</width>
-              <height>450</height>
+              <width>580</width>
+              <height>580</height>
              </size>
             </property>
             <property name="autoFillBackground">
-             <bool>true</bool>
+             <bool>false</bool>
             </property>
             <property name="styleSheet">
              <string notr="true">background-color: rgb(56, 64, 85);</string>
@@ -236,6 +242,9 @@ QLineEdit:disabled {
         </item>
         <item>
          <widget class="QLabel" name="label_6">
+          <property name="styleSheet">
+           <string notr="true">color:white;</string>
+          </property>
           <property name="text">
            <string>Model</string>
           </property>
@@ -245,15 +254,20 @@ QLineEdit:disabled {
          <widget class="QComboBox" name="comboBox_model">
           <property name="minimumSize">
            <size>
-            <width>140</width>
+            <width>160</width>
             <height>25</height>
            </size>
           </property>
           <property name="maximumSize">
            <size>
-            <width>140</width>
+            <width>160</width>
             <height>25</height>
            </size>
+          </property>
+          <property name="font">
+           <font>
+            <pointsize>7</pointsize>
+           </font>
           </property>
           <property name="styleSheet">
            <string notr="true">QComboBox {
@@ -274,22 +288,7 @@ QComboBox:disabled {
           </property>
           <item>
            <property name="text">
-            <string>EfficientNet_b3</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
             <string>EfficientNet_b0</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>ResNet18</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>ResNet50</string>
            </property>
           </item>
          </widget>
@@ -309,6 +308,9 @@ QComboBox:disabled {
         </item>
         <item>
          <widget class="QLabel" name="label_5">
+          <property name="styleSheet">
+           <string notr="true">color:white;</string>
+          </property>
           <property name="text">
            <string>Prediction</string>
           </property>
@@ -367,13 +369,6 @@ QLineEdit:disabled {
        </layout>
       </item>
       <item>
-       <widget class="Line" name="line">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-       </widget>
-      </item>
-      <item>
        <layout class="QHBoxLayout" name="horizontalLayout_4">
         <item>
          <widget class="QToolButton" name="toolButton_process">
@@ -391,7 +386,7 @@ QLineEdit:disabled {
           </property>
           <property name="font">
            <font>
-            <pointsize>14</pointsize>
+            <pointsize>10</pointsize>
            </font>
           </property>
           <property name="styleSheet">

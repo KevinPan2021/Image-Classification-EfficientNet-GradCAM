@@ -9,13 +9,13 @@ import cv2
 import sys
 import numpy as np
 import pickle
-from torchvision import transforms
 import torch
 from PIL import Image
 
-from model import ResNet18, ResNet50, EfficientNet_b0, EfficientNet_b3
+from efficientnet import EfficientNet_b0
 from qt_main import Ui_Application
-from main import SaveFeatures, BidirectionalMap, GPU_Device
+from main import SaveFeatures, BidirectionalMap, compute_device, get_transform
+
 
 def dark_JET_cmap():
     jet = plt.colormaps['jet']
@@ -68,7 +68,6 @@ class QT_Action(Ui_Application, QMainWindow):
     def load_model_action(self,):
         self.model_name = self.comboBox_model.currentText()
         
-        # load the model
         if self.model_name == 'EfficientNet_b0':
             # load the model architechture
             self.model = EfficientNet_b0(len(self.class_ind_pair))
@@ -81,75 +80,14 @@ class QT_Action(Ui_Application, QMainWindow):
             fc_params = list(self.model.model.classifier.parameters())
             
             # input image transform
-            self.transform = transforms.Compose([
-                transforms.Resize((224, 224)),
-                transforms.ToTensor(),
-                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-            ])
-            
-            
-        if self.model_name == 'EfficientNet_b3':
-            # load the model architechture
-            self.model = EfficientNet_b3(len(self.class_ind_pair))
-            
-            # loading the training model weights
-            self.model.load_state_dict(torch.load(f'{self.model_name}.pth'))
-            
-            # extract the final conv and fully connected layers (for GradCAM)
-            final_conv = self.model.model.features[-1]
-            fc_params = list(self.model.model.classifier.parameters())
-            
-            # input image transform
-            self.transform = transforms.Compose([
-                transforms.Resize((300, 300)),
-                transforms.ToTensor(),
-                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-            ])
-            
-            
-        elif self.model_name == 'ResNet18':
-            # load the model architechture
-            self.model = ResNet18(len(self.class_ind_pair))
-            
-            # loading the training model weights
-            self.model.load_state_dict(torch.load(f'{self.model_name}.pth'))
-            
-            # extract the final conv and fully connected layers (for GradCAM)
-            final_conv = self.model.model.layer4[-1]
-            fc_params = list(self.model.model.fc.parameters())
-            
-            # input image transform
-            self.transform = transforms.Compose([
-                transforms.Resize((224, 224)),
-                transforms.ToTensor(),
-                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-            ])
-        
-        
-        elif self.model_name == 'ResNet50':
-            # load the model architechture
-            self.model = ResNet50(len(self.class_ind_pair))
-            
-            # loading the training model weights
-            self.model.load_state_dict(torch.load(f'{self.model_name}.pth'))
-            
-            # extract the final conv and fully connected layers (for GradCAM)
-            final_conv = self.model.model.layer4[-1]
-            fc_params = list(self.model.model.fc.parameters())
-            
-            # input image transform
-            self.transform = transforms.Compose([
-                transforms.Resize((224, 224)),
-                transforms.ToTensor(),
-                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-            ])
+            self.transform = get_transform()
             
         # weights and conv layer features for GradCAM
         self.weight = np.squeeze(fc_params[0].cpu().data.numpy())
         self.activated_features = SaveFeatures(final_conv)
         
         # move model to GPU
-        self.model = self.model.to(GPU_Device())
+        self.model = self.model.to(compute_device())
         
         self.model.eval() # Set model to evaluation mode
         
@@ -197,7 +135,7 @@ class QT_Action(Ui_Application, QMainWindow):
         data = self.transform(self.image)
         
         # move data to GPU
-        data = data.to(GPU_Device())
+        data = data.to(compute_device())
         
         # add the batch dimension
         data = data.unsqueeze(0)

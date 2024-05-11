@@ -3,138 +3,179 @@ import torch.nn as nn
 import torch.optim as optim
 from tqdm import tqdm
 from sklearn.metrics import confusion_matrix
+from torch.cuda.amp import GradScaler, autocast
+import torch.nn.functional as F
 
 from visualization import plot_training_curves
 
-def feedforward(model, data_loader, GPU_Device):
-    epoch_loss = 0.0
-    labels_list = []
-    predicted_list = []
-    
-    # Define loss function
-    criterion = nn.CrossEntropyLoss()   
-    
+
+class FocalLoss(nn.Module):
+    def __init__(self, weight=None, gamma=2., reduction='mean'):
+        nn.Module.__init__(self)
+        self.weight = weight
+        self.gamma = gamma
+        self.reduction = reduction
+
+    def forward(self, input_tensor, target_tensor):
+        log_prob = F.log_softmax(input_tensor, dim=-1)
+        prob = torch.exp(log_prob)
+        return F.nll_loss(
+            ((1 - prob) ** self.gamma) * log_prob,
+            target_tensor,
+            weight=self.weight,
+            reduction=self.reduction
+        )
+
+
+@torch.no_grad
+def feedforward(model, data_loader, confusion=False):
     # Set model to evaluation mode
     model.eval()
+
+    running_loss = 0.0
+    labels_list = []
+    pred_list = []
+
+    # use focal loss to mitigate data imbalance
+    criterion = FocalLoss()
+
+    device = next(model.parameters()).device
     
-    # Disable gradient computation for evaluation
-    with torch.no_grad():
-        
+    with tqdm(total=len(data_loader)) as pbar:
         # Iterate over the dataset
-        for X, Y in data_loader:
+        for i, (X, Y) in enumerate(data_loader):
             # move to device
-            X = X.to(GPU_Device)
-            Y = Y.to(GPU_Device)
-            
+            X = X.to(device)
+            Y = Y.to(device)
+    
             # Forward pass
             outputs = model(X)
-            
+    
             loss = criterion(outputs, Y)
-            
-            # Update test statistics
-            epoch_loss += loss.item()
-            
+    
+            # Update statistics
+            running_loss += loss.item()
             _, predicted = torch.max(outputs.data, 1)
-            labels_list.append(Y.cpu())
-            predicted_list.append(predicted.cpu())
             
+            labels_list.extend(Y.tolist())
+            pred_list.extend(predicted.tolist())
             
-    labels_list = torch.cat(labels_list, dim=0)
-    predicted_list = torch.cat(predicted_list, dim=0)
+            compare = [label == predicted for label, predicted in zip(labels_list, pred_list)]
+
+            # Update tqdm description with loss and accuracy
+            pbar.set_postfix({'Loss': running_loss/(i+1), 'Acc': 100*sum(compare)/len(compare)})
+            pbar.update(1)
     
-    test_correct = predicted_list.eq(labels_list).sum().item()
-    confusion_mat = confusion_matrix(labels_list, predicted_list)
-    
-    # Calculate test accuracy and loss
-    epoch_acc = 100 * test_correct / len(data_loader.dataset)
-    epoch_loss /= len(data_loader)
-    return confusion_mat, epoch_acc, epoch_loss
+    running_loss /= len(data_loader)
+    acc = sum(compare)/len(compare)
+    if confusion:
+        confusion_mat = confusion_matrix(labels_list, pred_list)
+        return confusion_mat, acc, running_loss
+    else:
+        return acc, running_loss
 
 
 
-
-def backpropagation(model, data_loader, optimizer, scheduler, GPU_Device):
-    epoch_acc = 0.0
-    epoch_loss = 0.0
-    
-    # Define loss function
-    criterion = nn.CrossEntropyLoss()
-    
+def backpropagation(model, data_loader, optimizer, scaler, confusion=False):
     # Set model to training mode
     model.train()
+
+    running_loss = 0.0
+    labels_list = []
+    pred_list = []
+
+    # use focal loss to mitigate data imbalance
+    criterion = FocalLoss()
+    device = next(model.parameters()).device
     
     # Iterate over the dataset
-    for X, Y in tqdm(data_loader):
-        
-        # move to device
-        X = X.to(GPU_Device)
-        Y = Y.to(GPU_Device)
-        
-        # Forward pass
-        outputs = model(X)
-        loss = criterion(outputs, Y)
-        
-        # Update training statistics
-        epoch_loss += loss.item()
-        
-        _, predicted = torch.max(outputs.data, 1)
-        epoch_acc += predicted.eq(Y).sum().item()
-        
-        # Backward pass and optimization
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+    # Wrap your training loop with tqdm for progress tracking
+    with tqdm(total=len(data_loader)) as pbar:
+        for i, (X, Y) in enumerate(data_loader):
+            # move to device
+            X = X.to(device)
+            Y = Y.to(device)
+    
+            # mixed precision training
+            with autocast(dtype=torch.float16):
+                outputs = model(X)
+                loss = criterion(outputs, Y)
+    
+            # Update training statistics# Update statistics
+            running_loss += loss.item()
+            _, predicted = torch.max(outputs.data, 1)
+            labels_list.extend(Y.tolist())
+            pred_list.extend(predicted.tolist())
             
+            compare = [label == predicted for label, predicted in zip(labels_list, pred_list)]
+
+            # Reset gradients
+            optimizer.zero_grad()
     
-    # Update the learning rate
-    scheduler.step()
+            # Backpropagate the loss
+            scaler.scale(loss).backward()
     
+            # Optimization step
+            scaler.step(optimizer)
+    
+            # Updates the scale for next iteration.
+            scaler.update()
+            
+            # Update tqdm description with loss and accuracy
+            pbar.set_postfix({'Loss': running_loss/(i+1), 'Acc': 100*sum(compare)/len(compare)})
+            pbar.update(1)
+            
+            
     # Calculate training accuracy and loss
-    epoch_acc = 100 * epoch_acc / len(data_loader.dataset)
-    epoch_loss /= len(data_loader)
-    
-    return epoch_acc, epoch_loss
+    running_loss /= len(data_loader)
+    acc = sum(compare)/len(compare)
+    if confusion:
+        confusion_mat = confusion_matrix(labels_list, pred_list)
+        return confusion_mat, acc, running_loss
+    else:
+        return acc, running_loss
 
-   
 
-def model_training(model, nclasses, train_loader, valid_loader, GPU_Device):    
+
+def model_training(model, nclasses, train_loader, valid_loader):
     # Define hyperparameters
-    learning_rate = 1e-3
+    learning_rate = 5e-4
     weight_decay = 0
     num_epochs = 30
-    
+
     # optimizer
-    optimizer = optim.Adam(model.parameters(), weight_decay=weight_decay, lr=learning_rate)
-    
-    # learning rate scheduler - gradually decrease learning rate over time
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5)
-    
+    optimizer = optim.Adam(
+        model.parameters(), weight_decay=weight_decay, lr=learning_rate)
+
+    # Creates a GradScaler once at the beginning of training.
+    scaler = GradScaler()
+
     # calculate the initial statistics (random)
-    _, train_acc, train_loss = feedforward(model, train_loader, GPU_Device)
-    _, valid_acc, valid_loss = feedforward(model, valid_loader, GPU_Device)
+    print(f"Epoch {0}/{num_epochs}")
+    train_acc, train_loss = feedforward(model, train_loader)
+    valid_acc, valid_loss = feedforward(model, valid_loader)
     train_loss_curve, train_acc_curve = [train_loss], [train_acc]
     valid_loss_curve, valid_acc_curve = [valid_loss], [valid_acc]
-    print(f"Epoch {0}/{num_epochs} | Train Loss: {train_loss:.4f} | Train Acc: {train_acc:.2f}% | Test Loss: {valid_loss:.4f} | Test Acc: {valid_acc:.2f}%")
     
+
     # Early Stopping criteria
     patience = 3
     not_improved = 0
     best_valid_loss = valid_loss
     threshold = 0.01
-    
+
     # Training loop
     for epoch in range(num_epochs):
-        train_acc, train_loss = backpropagation(model, train_loader, optimizer, scheduler, GPU_Device)
-        _, valid_acc, valid_loss = feedforward(model, valid_loader, GPU_Device)
-        
+        print(f"Epoch {epoch+1}/{num_epochs}")
+        train_acc, train_loss = backpropagation(model, train_loader, optimizer, scaler)
+        valid_acc, valid_loss = feedforward(model, valid_loader)
+
         train_loss_curve.append(train_loss)
         train_acc_curve.append(train_acc)
         valid_loss_curve.append(valid_loss)
         valid_acc_curve.append(valid_acc)
-        
-        # Print epoch statistics
-        print(f"Epoch {epoch+1}/{num_epochs} | Train Loss: {train_loss:.4f} | Train Acc: {train_acc:.2f}% | Test Loss: {valid_loss:.4f} | Test Acc: {valid_acc:.2f}%")
-        
+
+
         # evaluate the current preformance
         if valid_loss < best_valid_loss + threshold:
             best_valid_loss = valid_loss
@@ -146,6 +187,6 @@ def model_training(model, nclasses, train_loader, valid_loader, GPU_Device):
             if not_improved >= patience:
                 print('Early Stopping Activated')
                 break
-        
+
     # plotting the training curves
     plot_training_curves(train_loss_curve, valid_loss_curve, train_acc_curve, valid_acc_curve)

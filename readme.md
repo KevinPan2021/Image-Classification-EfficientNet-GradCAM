@@ -1,5 +1,5 @@
 Introduction:
-	This project aims to preform 100 class sports image classification using transfer learning from pretrained Resnet, EfficientNet ... This project includes: image data processing, training deep learning models for classification, GradCAM for visualization, and a GUI for your own data.
+	This project aims to preform 100 class sports image classification using transfer learning from pretrained EfficientNet. This project includes: image data processing, training deep learning models for classification, GradCAM for visualization, and a GUI for your own data.
 
 
 
@@ -9,14 +9,24 @@ Dataset:
 
 
 Build: 
-	M1 Macbook Pro
-	Miniforge 3 (Python 3.9)
-	PyTorch version: 2.2.1
+	System:
+		CPU: Intel i9-13900H (14 cores)
+		GPU: NIVIDIA RTX 4060 (VRAM 8 GB)
+		RAM: 32 GB
 
-* Alternative Build:
-	Windows (NIVIDA GPU)
-	Anaconda 3
-	PyTorch
+	Configuration:
+		CUDA 12.1
+		Anaconda 3
+		Python = 3.10.9
+		Spyder = 5.4.1
+		
+	Core Python Package:
+		pytorch = 2.1.2
+		numpy = 1.23.5
+		OpenCV = 4.9.0.80
+		matplotlib = 3.7.0
+		pandas = 1.5.3
+		tqdm = 4.64.1
 
 
 
@@ -29,7 +39,7 @@ Generate ".py" file from ".ui" file:
 Core Project Structure:
 	GUI.py (Run to generate a GUI)
 	main.py (Run to train model)
-	model.py
+	efficientnet.py
 	qt_main.py
 	training.py
 	visualization.py
