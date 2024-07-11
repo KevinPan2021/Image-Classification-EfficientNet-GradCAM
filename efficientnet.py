@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import sys
+from summary import Summary
 
 path = '../pretrained_models/EfficientNet/'
 sys.path.append(path)
@@ -28,5 +29,15 @@ class EfficientNet_b0(nn.Module):
     def forward(self, x):
         return self.model(x)
     
+
+def main():
+    # Creating model and testing output shapes 
+    model = EfficientNet_b0(nclasses=100) 
+    Summary(model)
+    
+    
+
+if __name__ == "__main__": 
+    main()
     
     

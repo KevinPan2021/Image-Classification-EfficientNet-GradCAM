@@ -1,5 +1,7 @@
 application_name = 'Sport Classification'
+
 # pyqt packages
+from PyQt5 import uic
 from PyQt5.QtGui import QPainter, QPixmap, QImage, QIcon
 from PyQt5.QtWidgets import QMainWindow, QApplication, QMessageBox, QFileDialog
 
@@ -13,7 +15,6 @@ import torch
 from PIL import Image
 
 from efficientnet import EfficientNet_b0
-from qt_main import Ui_Application
 from main import SaveFeatures, BidirectionalMap, compute_device, get_transform
 
 
@@ -35,12 +36,11 @@ def show_message(parent, title, message, icon=QMessageBox.Warning):
         
         
         
-class QT_Action(Ui_Application, QMainWindow):
+class QT_Action(QMainWindow):
     def __init__(self):
         # system variable
         super(QT_Action, self).__init__()
-        self.setupUi(self)
-        self.retranslateUi(self)
+        uic.loadUi('qt_main.ui', self)
         self.setWindowIcon(QIcon('favicon.png')) # changed the window icon
         self.setWindowTitle(application_name) # set the title
         
