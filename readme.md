@@ -33,7 +33,10 @@ This project aims to preform 100 class sports image classification using transfe
   <img src="external/ACC.png" alt="Acc Curve" width="45%">
 </p>
 
+
+### Test Dataset Preformance
 ![Confusion Matrix](external/Test_Confusion_Matrix.png)
+
 
 ### Code Structure:
 ```bash
