@@ -1,48 +1,56 @@
-Introduction:
-	This project aims to preform 100 class sports image classification using transfer learning from pretrained EfficientNet. This project includes: image data processing, training deep learning models for classification, GradCAM for visualization, and a GUI for your own data.
+# Image Classification with EfficientNet
+
+This project aims to preform 100 class sports image classification using transfer learning from pretrained EfficientNet. This project includes: image data processing, training deep learning models for classification, GradCAM for visualization, and a GUI for your own data.
+![Classification](external/GUI.png)
+
+
+### Dataset: 
+[Kaggle sports classification](https://www.kaggle.com/datasets/gpiosenka/sports-classification/)
 
 
 
-Dataset: 
-	https://www.kaggle.com/datasets/gpiosenka/sports-classification/
+### Build: 
+
+	CPU: Intel i9-13900H (14 cores)
+	GPU: NVIDIA RTX 4060 (VRAM 8 GB)
+	RAM: 32 GB
+
+
+### Python Packages:
+
+	conda install pytorch==2.1.2 torchvision==0.16.2 torchaudio==2.1.2 pytorch-cuda=12.1 -c pytorch -c nvidia
+	conda install -c conda-forge pandas = 1.5.3
+	conda install -c conda-forge tqdm = 4.64.1
+	conda install -c conda-forge matplotlib = 3.8.0
+	conda install -c conda-forge numpy = 1.26.4
+	conda install -c conda-forge opencv = 4.9.0
+
+
+### Data Distribution
+![Data Distribution](external/Data_Distribution.png)
+
+### Training Curves
+
+<p align="center">
+  <img src="external/loss.png" alt="Loss Curve" width="45%">
+  <img src="external/ACC.png" alt="Acc Curve" width="45%">
+</p>
 
 
 
-Build: 
-	System:
-		CPU: Intel i9-13900H (14 cores)
-		GPU: NIVIDIA RTX 4060 (VRAM 8 GB)
-		RAM: 32 GB
+### Code Structure:
+```bash
+├── GUI.py (Run to generate a GUI)
+├── main.py (Run to train model)
+├── efficientnet.py
+├── qt_main.py
+├── training.py
+├── summary.py
+├── visualization.py
 
-	Configuration:
-		CUDA 12.1
-		Anaconda 3
-		Python = 3.10.9
-		Spyder = 5.4.1
-		
-	Core Python Package:
-		pytorch = 2.1.2
-		numpy = 1.23.5
-		OpenCV = 4.9.0.80
-		matplotlib = 3.7.0
-		pandas = 1.5.3
-		tqdm = 4.64.1
+```
 
+### Credits:
+	"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks"
 
-
-Generate ".py" file from ".ui" file:
-	1) open Terminal. Navigate to directory
-	2) Type "pyuic5 -x qt_main.ui -o qt_main.py"
-
-
-
-Core Project Structure:
-	GUI.py (Run to generate a GUI)
-	main.py (Run to train model)
-	efficientnet.py
-	qt_main.py
-	training.py
-	visualization.py
-	data (place the data folder here after downloading from gaggle)
-	../pytorch_model_weights (download and place model .pth here)
 	
