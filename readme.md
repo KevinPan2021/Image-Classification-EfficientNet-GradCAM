@@ -7,7 +7,8 @@ This project aims to preform 100 class sports image classification using transfe
 ### Dataset: 
 [Kaggle sports classification](https://www.kaggle.com/datasets/gpiosenka/sports-classification/)
 
-
+### Data Distribution
+![Data Distribution](external/Data_Distribution.png)
 
 ### Build: 
 
@@ -25,9 +26,6 @@ This project aims to preform 100 class sports image classification using transfe
 	conda install -c conda-forge numpy = 1.26.4
 	conda install -c conda-forge opencv = 4.9.0
 
-
-### Data Distribution
-![Data Distribution](external/Data_Distribution.png)
 
 ### Training Curves
 
