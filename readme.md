@@ -6,6 +6,7 @@ This project aims to preform 100 class sports image classification using transfe
 
 ### Dataset: 
 [Kaggle sports classification](https://www.kaggle.com/datasets/gpiosenka/sports-classification/)
+
 ![Data Distribution](external/Data_Distribution.png)
 
 ### Build: 
