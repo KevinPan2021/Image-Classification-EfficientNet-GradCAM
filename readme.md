@@ -7,10 +7,11 @@ This project aims to preform 100 class sports image classification using transfe
 ### Dataset: 
 [Kaggle sports classification](https://www.kaggle.com/datasets/gpiosenka/sports-classification/)
 
+![Data Distribution](external/Data_Distribution.png)
+
 ### Pretrained Model Weights:
 [Pretrained EfficientNetB0](https://download.pytorch.org/models/efficientnet_b0_rwightman-7f5810bc.pth)
 
-![Data Distribution](external/Data_Distribution.png)
 
 ### Build: 
 
