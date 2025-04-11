@@ -7,7 +7,7 @@ import pandas as pd
 import pickle
 from collections import Counter
 
-# system packages
+# custom packages
 from efficientnet import EfficientNet_b0
 from training import model_training, feedforward
 from visualization import plot_confusion_matrix, plot_data_distribution, plot_image
@@ -82,12 +82,10 @@ class CustomDataset(Dataset):
 
 
 
-# supports CUDA, MPS, and CPU
+# supports CUDA and CPU
 def compute_device():
     if torch.cuda.is_available():
         return 'cuda'
-    elif torch.backends.mps.is_available():
-        return 'mps'
     else:
         return 'cpu'
 
@@ -98,9 +96,12 @@ def get_transform(aug=False):
     # image transform with augmentation
     if aug:
         transform = transforms.Compose([
-            transforms.Resize((224, 224)),
+            #transforms.Resize((224, 224)),
+            transforms.RandomResizedCrop(size=224, scale=(0.8, 1.0), ratio=(0.75, 1.33)),  # Random crop before resize
             transforms.RandomHorizontalFlip(p=0.5),
             transforms.ColorJitter(),
+            transforms.RandomAffine(degrees=10, translate=(0.05, 0.05), scale=(0.95, 1.05)),
+            transforms.RandomGrayscale(p=0.1),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])
@@ -153,11 +154,11 @@ def main():
 
     # convert to loader object
     train_loader = DataLoader(
-        train_dataset, batch_size=128, num_workers=4, pin_memory=True, 
+        train_dataset, batch_size=256, num_workers=8, pin_memory=True, 
         persistent_workers=True, shuffle=True
     )
     valid_loader = DataLoader(
-        valid_dataset, batch_size=256, num_workers=4, pin_memory=True, 
+        valid_dataset, batch_size=256, num_workers=8, pin_memory=True, 
         persistent_workers=True, shuffle=False
     )
     
@@ -165,13 +166,13 @@ def main():
     model_training(model, nclasses, train_loader, valid_loader)
     
     # loading the best preforming model
-    model.load_state_dict(torch.load(f'{type(model).__name__}.pth'))
+    model.load_state_dict(torch.load(f'{type(model).__name__}.pth', weights_only=True))
     
     # model test preformance
     test_dataset = CustomDataset(f'{dataset}/test', class_ind_pair, get_transform())
     
     test_loader = DataLoader(
-        test_dataset, batch_size=256, num_workers=4, pin_memory=True, 
+        test_dataset, batch_size=256, num_workers=8, pin_memory=True, 
         persistent_workers=True, shuffle=False
     )
     

@@ -6,20 +6,20 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1200</width>
-    <height>800</height>
+    <width>1400</width>
+    <height>900</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
-    <width>1200</width>
-    <height>800</height>
+    <width>1400</width>
+    <height>900</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
-    <width>1200</width>
-    <height>800</height>
+    <width>1400</width>
+    <height>900</height>
    </size>
   </property>
   <property name="mouseTracking">
@@ -37,14 +37,14 @@
   <widget class="QWidget" name="centralwidget">
    <property name="minimumSize">
     <size>
-     <width>1200</width>
-     <height>800</height>
+     <width>1400</width>
+     <height>900</height>
     </size>
    </property>
    <property name="maximumSize">
     <size>
-     <width>1200</width>
-     <height>800</height>
+     <width>1400</width>
+     <height>900</height>
     </size>
    </property>
    <property name="mouseTracking">
@@ -53,8 +53,34 @@
    <property name="styleSheet">
     <string notr="true">background-color:rgb(32, 38, 52);</string>
    </property>
-   <layout class="QVBoxLayout" name="verticalLayout_4">
-    <item>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="1" column="0">
+     <spacer name="horizontalSpacer_5">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>40</width>
+        <height>20</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item row="1" column="2">
+     <spacer name="horizontalSpacer_4">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>40</width>
+        <height>20</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item row="1" column="1">
      <layout class="QVBoxLayout" name="verticalLayout_3">
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout">
@@ -62,14 +88,14 @@
          <widget class="QToolButton" name="toolButton_import">
           <property name="minimumSize">
            <size>
-            <width>100</width>
-            <height>38</height>
+            <width>120</width>
+            <height>45</height>
            </size>
           </property>
           <property name="maximumSize">
            <size>
-            <width>100</width>
-            <height>38</height>
+            <width>120</width>
+            <height>45</height>
            </size>
           </property>
           <property name="font">
@@ -147,14 +173,14 @@ QLineEdit:disabled {
            <widget class="QLabel" name="label_image">
             <property name="minimumSize">
              <size>
-              <width>580</width>
-              <height>580</height>
+              <width>650</width>
+              <height>650</height>
              </size>
             </property>
             <property name="maximumSize">
              <size>
-              <width>580</width>
-              <height>580</height>
+              <width>650</width>
+              <height>650</height>
              </size>
             </property>
             <property name="autoFillBackground">
@@ -197,14 +223,14 @@ QLineEdit:disabled {
            <widget class="QLabel" name="label_heatmap">
             <property name="minimumSize">
              <size>
-              <width>580</width>
-              <height>580</height>
+              <width>650</width>
+              <height>650</height>
              </size>
             </property>
             <property name="maximumSize">
              <size>
-              <width>580</width>
-              <height>580</height>
+              <width>650</width>
+              <height>650</height>
              </size>
             </property>
             <property name="autoFillBackground">
@@ -374,14 +400,14 @@ QLineEdit:disabled {
          <widget class="QToolButton" name="toolButton_process">
           <property name="minimumSize">
            <size>
-            <width>100</width>
-            <height>38</height>
+            <width>120</width>
+            <height>45</height>
            </size>
           </property>
           <property name="maximumSize">
            <size>
-            <width>100</width>
-            <height>38</height>
+            <width>120</width>
+            <height>45</height>
            </size>
           </property>
           <property name="font">
@@ -405,7 +431,33 @@ QLineEdit:disabled {
         </item>
        </layout>
       </item>
+      <item>
+       <spacer name="verticalSpacer_2">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>40</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
      </layout>
+    </item>
+    <item row="0" column="1">
+     <spacer name="verticalSpacer">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>20</width>
+        <height>40</height>
+       </size>
+      </property>
+     </spacer>
     </item>
    </layout>
   </widget>

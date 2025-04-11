@@ -2,7 +2,7 @@ application_name = 'Sport Classification'
 
 # pyqt packages
 from PyQt5 import uic
-from PyQt5.QtGui import QPainter, QPixmap, QImage, QIcon
+from PyQt5.QtGui import QPainter, QPixmap, QImage
 from PyQt5.QtWidgets import QMainWindow, QApplication, QMessageBox, QFileDialog
 
 import matplotlib.pyplot as plt
@@ -41,7 +41,6 @@ class QT_Action(QMainWindow):
         # system variable
         super(QT_Action, self).__init__()
         uic.loadUi('qt_main.ui', self)
-        self.setWindowIcon(QIcon('favicon.png')) # changed the window icon
         self.setWindowTitle(application_name) # set the title
         
         # runtime variable
@@ -73,7 +72,7 @@ class QT_Action(QMainWindow):
             self.model = EfficientNet_b0(len(self.class_ind_pair))
             
             # loading the training model weights
-            self.model.load_state_dict(torch.load(f'{self.model_name}.pth'))
+            self.model.load_state_dict(torch.load(f'{self.model_name}.pth', weights_only=True))
             
             # extract the final conv and fully connected layers (for GradCAM)
             final_conv = self.model.model.features[-1]

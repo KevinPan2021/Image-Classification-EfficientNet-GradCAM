@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 from tqdm import tqdm
 from sklearn.metrics import confusion_matrix
-from torch.cuda.amp import GradScaler, autocast
+from torch.amp import GradScaler, autocast
 import torch.nn.functional as F
 
 from visualization import plot_training_curves
@@ -97,7 +97,7 @@ def backpropagation(model, data_loader, optimizer, scaler, confusion=False):
             Y = Y.to(device)
     
             # mixed precision training
-            with autocast(dtype=torch.float16):
+            with autocast('cuda' if torch.cuda.is_available() else 'cpu', dtype=torch.float16):
                 outputs = model(X)
                 loss = criterion(outputs, Y)
     
@@ -141,14 +141,14 @@ def model_training(model, nclasses, train_loader, valid_loader):
     # Define hyperparameters
     learning_rate = 5e-4
     weight_decay = 0
-    num_epochs = 30
+    num_epochs = 60
 
     # optimizer
     optimizer = optim.Adam(
         model.parameters(), weight_decay=weight_decay, lr=learning_rate)
 
     # Creates a GradScaler once at the beginning of training.
-    scaler = GradScaler()
+    scaler = GradScaler('cuda' if torch.cuda.is_available() else 'cpu')
 
     # calculate the initial statistics (random)
     print(f"Epoch {0}/{num_epochs}")

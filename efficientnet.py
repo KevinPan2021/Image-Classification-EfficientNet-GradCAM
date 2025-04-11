@@ -15,11 +15,18 @@ class EfficientNet_b0(nn.Module):
         
         self.model = efficientnet_b0(weights=None)
         
-        weights = torch.load(path + 'efficientnet_b0_IMAGENET1K_V1.pth')
+        weights = torch.load(path + 'efficientnet_b0_rwightman-7f5810bc.pth', weights_only=True)
         self.model.load_state_dict(weights)
         
         for param in self.model.parameters():
             param.requires_grad = False
+        
+        
+        # Unfreeze last few layers
+        for name, param in self.model.named_parameters():
+            if 'blocks.6' in name or 'conv_head' in name:
+                param.requires_grad = True
+        
         
         # Modify the output layer for n classification
         linear_layer = self.model.classifier[1]
